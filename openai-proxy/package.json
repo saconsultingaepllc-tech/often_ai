@@ -8,7 +8,7 @@
     "test:integration": "jest test/integration.test.js --forceExit --detectOpenHandles"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^4.0.0",
+    "@google-cloud/secret-manager": "^6.1.1",
     "axios": "^1.0.0",
     "express": "^4.21.0",
     "firebase-admin": "^12.6.0"

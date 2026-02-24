@@ -170,12 +170,56 @@ function isValidEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+/* ───────── rate limiting ───────── */
+
+const rateMap = new Map();
+const RATE_WINDOW = 60_000;
+const RATE_LIMITS = {signup: 5, login: 10, refresh: 30};
+
+/**
+ * Per-IP rate limiter (in-memory, per-instance).
+ * @param {string} endpoint - Rate limit bucket name
+ * @param {object} req - Express request
+ * @param {object} res - Express response
+ * @return {boolean} True if allowed
+ */
+function checkRateLimit(endpoint, req, res) {
+  const ip = req.ip ||
+    req.headers["x-forwarded-for"] || "unknown";
+  const key = `${endpoint}:${ip}`;
+  const now = Date.now();
+  const entry = rateMap.get(key);
+
+  if (!entry || now - entry.start > RATE_WINDOW) {
+    rateMap.set(key, {start: now, count: 1});
+    return true;
+  }
+
+  entry.count++;
+  if (entry.count > (RATE_LIMITS[endpoint] || 10)) {
+    res.status(429).json({
+      error: "Too many requests. Try again later.",
+    });
+    return false;
+  }
+  return true;
+}
+
+// Lazy cleanup every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of rateMap) {
+    if (now - v.start > RATE_WINDOW) rateMap.delete(k);
+  }
+}, 5 * 60_000).unref();
+
 /* ═════════════════ AUTH ═════════════════ */
 
 exports.signup = onRequest(CORS, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({error: "Use POST"});
   }
+  if (!checkRateLimit("signup", req, res)) return;
   const {email, password} = req.body || {};
   if (!email || !password) {
     return res.status(400).json({
@@ -217,6 +261,7 @@ exports.login = onRequest(CORS, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({error: "Use POST"});
   }
+  if (!checkRateLimit("login", req, res)) return;
   const {email, password} = req.body || {};
   if (!email || !password) {
     return res.status(400).json({
@@ -239,6 +284,7 @@ exports.refresh = onRequest(CORS, async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({error: "Use POST"});
   }
+  if (!checkRateLimit("refresh", req, res)) return;
   const {refreshToken} = req.body || {};
   if (!refreshToken) {
     return res.status(400).json({
@@ -612,6 +658,7 @@ exports._test = {
   isValidEmail,
   convertCurrency,
   isAdmin,
+  checkRateLimit,
   UNITS,
   SUPPORTED,
   EMPTY_BALANCES,
