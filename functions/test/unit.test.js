@@ -180,7 +180,7 @@ describe("isAdmin", () => {
   });
 
   test("rejects NoSQL injection attempt", () => {
-    const req = {headers: {"x-admin-key": '{"$gt": ""}'}};
+    const req = {headers: {"x-admin-key": "{\"$gt\": \"\"}"}};
     expect(isAdmin(req)).toBe(false);
   });
 
@@ -206,8 +206,12 @@ describe("checkRateLimit", () => {
     const res = {
       statusCode: 200,
       body: null,
-      status: jest.fn(function(code) { this.statusCode = code; return this; }),
-      json: jest.fn(function(data) { this.body = data; return this; }),
+      status: jest.fn(function(code) {
+        this.statusCode = code; return this;
+      }),
+      json: jest.fn(function(data) {
+        this.body = data; return this;
+      }),
     };
     return res;
   }

@@ -76,6 +76,11 @@ jobs:
         run: npm ci
         working-directory: functions
 
+      - name: Create functions .env for emulator
+        run: |
+          echo "FIREBASE_WEB_API_KEY=test-ci-key" > functions/.env
+          echo "ADMIN_API_KEY=test-ci-admin-key" >> functions/.env
+
       - name: Start emulators
         run: |
           firebase emulators:start --only auth,firestore,functions \

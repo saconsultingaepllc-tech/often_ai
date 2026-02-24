@@ -67,8 +67,8 @@ jest.mock("firebase-admin", () => {
           // ref is the return value of db.doc() — we need the uid
           // Extract from last call to db.doc
           const lastDocCall = mockDb.doc.mock.calls;
-          const lastPath = lastDocCall[lastDocCall.length - 1]?.[0]
-            || lastDocCall[lastDocCall.length - 2]?.[0];
+          const lastPath = lastDocCall[lastDocCall.length - 1]?.[0] ||
+            lastDocCall[lastDocCall.length - 2]?.[0];
           const uid = lastPath?.split("/").pop();
           return {
             exists: !!accounts[uid],
@@ -143,8 +143,12 @@ function mockRes() {
   const res = {
     statusCode: 200,
     body: null,
-    status: jest.fn(function(code) { this.statusCode = code; return this; }),
-    json: jest.fn(function(data) { this.body = data; return this; }),
+    status: jest.fn(function(code) {
+      this.statusCode = code; return this;
+    }),
+    json: jest.fn(function(data) {
+      this.body = data; return this;
+    }),
   };
   return res;
 }
@@ -170,8 +174,8 @@ describe("POST /deposit", () => {
 
   test("valid deposit increases balance", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
-      {"x-admin-key": "test-admin-key-12345"},
+        {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
+        {"x-admin-key": "test-admin-key-12345"},
     );
     const res = mockRes();
 
@@ -187,8 +191,8 @@ describe("POST /deposit", () => {
 
   test("rejects without admin key (401/403)", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
-      {},
+        {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
+        {},
     );
     const res = mockRes();
 
@@ -201,8 +205,8 @@ describe("POST /deposit", () => {
 
   test("rejects with wrong admin key", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
-      {"x-admin-key": "wrong-key"},
+        {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
+        {"x-admin-key": "wrong-key"},
     );
     const res = mockRes();
 
@@ -213,8 +217,8 @@ describe("POST /deposit", () => {
 
   test("rejects SQL injection in admin key", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
-      {"x-admin-key": "' OR 1=1 --"},
+        {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
+        {"x-admin-key": "' OR 1=1 --"},
     );
     const res = mockRes();
 
@@ -225,8 +229,8 @@ describe("POST /deposit", () => {
 
   test("rejects with user bearer token instead of admin key", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
-      {"authorization": "Bearer some-token"},
+        {accountId: "agent-a", amount: 10_000_000, currency: "USD"},
+        {"authorization": "Bearer some-token"},
     );
     const res = mockRes();
 
@@ -237,8 +241,8 @@ describe("POST /deposit", () => {
 
   test("rejects zero amount", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 0, currency: "USD"},
-      {"x-admin-key": "test-admin-key-12345"},
+        {accountId: "agent-a", amount: 0, currency: "USD"},
+        {"x-admin-key": "test-admin-key-12345"},
     );
     const res = mockRes();
 
@@ -249,8 +253,8 @@ describe("POST /deposit", () => {
 
   test("rejects negative amount", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: -100, currency: "USD"},
-      {"x-admin-key": "test-admin-key-12345"},
+        {accountId: "agent-a", amount: -100, currency: "USD"},
+        {"x-admin-key": "test-admin-key-12345"},
     );
     const res = mockRes();
 
@@ -261,8 +265,8 @@ describe("POST /deposit", () => {
 
   test("rejects unsupported currency", async () => {
     const req = mockReq("POST",
-      {accountId: "agent-a", amount: 1000, currency: "DOGE"},
-      {"x-admin-key": "test-admin-key-12345"},
+        {accountId: "agent-a", amount: 1000, currency: "DOGE"},
+        {"x-admin-key": "test-admin-key-12345"},
     );
     const res = mockRes();
 
@@ -329,8 +333,8 @@ describe("POST /transfer", () => {
     });
 
     const req = mockReq("POST",
-      {toAccountId: "agent-b", amount: 1_000_000, currency: "USD"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-b", amount: 1_000_000, currency: "USD"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();
@@ -344,7 +348,7 @@ describe("POST /transfer", () => {
 
     // Double-entry: exactly 2 transaction records
     const txRecords = transactions.filter(
-      (t) => t.type === "transfer_out" || t.type === "transfer_in",
+        (t) => t.type === "transfer_out" || t.type === "transfer_in",
     );
     expect(txRecords).toHaveLength(2);
     expect(txRecords.find((t) => t.type === "transfer_out").amount).toBe(1_000_000);
@@ -370,8 +374,8 @@ describe("POST /transfer", () => {
     });
 
     const req = mockReq("POST",
-      {toAccountId: "agent-b", amount: 5_000_000, currency: "USD"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-b", amount: 5_000_000, currency: "USD"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();
@@ -388,8 +392,8 @@ describe("POST /transfer", () => {
     seedAccount("agent-a", {USD: 5_000_000, USDC: 0, ETH: 0, BTC: 0, SOL: 0});
 
     const req = mockReq("POST",
-      {toAccountId: "agent-a", amount: 1_000_000, currency: "USD"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-a", amount: 1_000_000, currency: "USD"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();
@@ -404,8 +408,8 @@ describe("POST /transfer", () => {
     seedAccount("agent-a", {USD: 5_000_000, USDC: 0, ETH: 0, BTC: 0, SOL: 0});
 
     const req = mockReq("POST",
-      {toAccountId: "agent-b", amount: 0, currency: "USD"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-b", amount: 0, currency: "USD"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();
@@ -419,8 +423,8 @@ describe("POST /transfer", () => {
     seedAccount("agent-a", {USD: 5_000_000, USDC: 0, ETH: 0, BTC: 0, SOL: 0});
 
     const req = mockReq("POST",
-      {toAccountId: "agent-b", amount: -500, currency: "USD"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-b", amount: -500, currency: "USD"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();
@@ -432,8 +436,8 @@ describe("POST /transfer", () => {
 
   test("rejects unsupported currency", async () => {
     const req = mockReq("POST",
-      {toAccountId: "agent-b", amount: 1000, currency: "DOGE"},
-      {authorization: "Bearer valid-token"},
+        {toAccountId: "agent-b", amount: 1000, currency: "DOGE"},
+        {authorization: "Bearer valid-token"},
     );
     req.user = {uid: "agent-a"};
     const res = mockRes();

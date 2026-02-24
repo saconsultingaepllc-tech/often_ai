@@ -26,15 +26,15 @@ beforeAll(async () => {
     await fetch(`http://${FIRESTORE_HOST}`, {signal: AbortSignal.timeout(2000)});
   } catch {
     console.warn(
-      "\n⚠  Firestore emulator not running. Skipping security rules tests.\n" +
+        "\n⚠  Firestore emulator not running. Skipping security rules tests.\n" +
       "   Start with: firebase emulators:start --only firestore\n",
     );
     return;
   }
 
   const rules = readFileSync(
-    join(__dirname, "../../firestore.rules"),
-    "utf8",
+      join(__dirname, "../../firestore.rules"),
+      "utf8",
   );
   const [host, portStr] = FIRESTORE_HOST.split(":");
   testEnv = await initializeTestEnvironment({
@@ -117,13 +117,13 @@ describe("transactions collection – client access blocked", () => {
     const agentA = testEnv.authenticatedContext("agent-a");
     const col = agentA.firestore().collection("transactions");
     await assertFails(
-      col.add({
-        accountId: "agent-a",
-        type: "deposit",
-        currency: "USD",
-        amount: 10_000_000,
-        description: "Fake deposit",
-      }),
+        col.add({
+          accountId: "agent-a",
+          type: "deposit",
+          currency: "USD",
+          amount: 10_000_000,
+          description: "Fake deposit",
+        }),
     );
   });
 
@@ -132,12 +132,12 @@ describe("transactions collection – client access blocked", () => {
     const agentA = testEnv.authenticatedContext("agent-a");
     const col = agentA.firestore().collection("transactions");
     await assertFails(
-      col.add({
-        accountId: "agent-a",
-        type: "transfer_in",
-        amount: 5_000_000,
-        description: "Fabricated incoming transfer",
-      }),
+        col.add({
+          accountId: "agent-a",
+          type: "transfer_in",
+          amount: 5_000_000,
+          description: "Fabricated incoming transfer",
+        }),
     );
   });
 
@@ -146,7 +146,7 @@ describe("transactions collection – client access blocked", () => {
     const agentA = testEnv.authenticatedContext("agent-a");
     const col = agentA.firestore().collection("transactions");
     await assertFails(
-      col.where("accountId", "==", "agent-a").get(),
+        col.where("accountId", "==", "agent-a").get(),
     );
   });
 
@@ -155,7 +155,7 @@ describe("transactions collection – client access blocked", () => {
     const agentA = testEnv.authenticatedContext("agent-a");
     const col = agentA.firestore().collection("transactions");
     await assertFails(
-      col.where("accountId", "==", "agent-b").get(),
+        col.where("accountId", "==", "agent-b").get(),
     );
   });
 
@@ -171,7 +171,7 @@ describe("transactions collection – client access blocked", () => {
     const unauth = testEnv.unauthenticatedContext();
     const col = unauth.firestore().collection("transactions");
     await assertFails(
-      col.add({accountId: "x", type: "deposit", amount: 1}),
+        col.add({accountId: "x", type: "deposit", amount: 1}),
     );
   });
 });
@@ -183,18 +183,20 @@ describe("transactions collection – client access blocked", () => {
 describe("admin SDK bypass", () => {
   test("admin context CAN write to accounts (server-side)", async () => {
     if (!emulatorAvailable) return;
-    const data = await testEnv.withSecurityRulesDisabled(async (context) => {
+    let data;
+    await testEnv.withSecurityRulesDisabled(async (context) => {
       const doc = context.firestore().collection("accounts").doc("agent-a");
       await doc.set({balances: {USD: 1_000_000}, status: "active"});
       const snap = await doc.get();
-      return snap.data();
+      data = snap.data();
     });
     expect(data.balances.USD).toBe(1_000_000);
   });
 
   test("admin context CAN write transactions (server-side)", async () => {
     if (!emulatorAvailable) return;
-    const data = await testEnv.withSecurityRulesDisabled(async (context) => {
+    let data;
+    await testEnv.withSecurityRulesDisabled(async (context) => {
       const col = context.firestore().collection("transactions");
       const ref = await col.add({
         accountId: "agent-a",
@@ -202,7 +204,7 @@ describe("admin SDK bypass", () => {
         amount: 5_000_000,
       });
       const snap = await ref.get();
-      return snap.data();
+      data = snap.data();
     });
     expect(data.type).toBe("deposit");
   });
