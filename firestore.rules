@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All data is managed server-side via Admin SDK.
+    // Agents interact through Cloud Functions and the proxy API only.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

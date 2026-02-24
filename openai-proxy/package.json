@@ -1,0 +1,20 @@
+{
+  "name": "openai-proxy",
+  "version": "2.0.0",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:unit": "jest test/unit.test.js --forceExit",
+    "test:integration": "jest test/integration.test.js --forceExit --detectOpenHandles"
+  },
+  "dependencies": {
+    "@google-cloud/secret-manager": "^4.0.0",
+    "axios": "^1.0.0",
+    "express": "^4.21.0",
+    "firebase-admin": "^12.6.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.0"
+  }
+}
