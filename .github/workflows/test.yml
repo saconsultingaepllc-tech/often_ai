@@ -76,13 +76,12 @@ jobs:
         run: npm ci
         working-directory: functions
 
-      - name: Create functions .env for emulator
-        run: |
-          echo "FIREBASE_WEB_API_KEY=test-ci-key" > functions/.env
-          echo "ADMIN_API_KEY=test-ci-admin-key" >> functions/.env
-
       - name: Start emulators
         run: |
+          # Create .env so the functions emulator can load env vars
+          printf 'FIREBASE_WEB_API_KEY=test-ci-key\nADMIN_API_KEY=test-ci-admin-key\n' > functions/.env
+          cat functions/.env
+
           firebase emulators:start --only auth,firestore,functions \
             --project ext-hub &
 
@@ -119,8 +118,8 @@ jobs:
         working-directory: functions
 
       - name: Run E2E tests
-        run: npx jest ../test/e2e.test.js --forceExit --detectOpenHandles
         working-directory: functions
+        run: npx jest --testMatch='**/e2e.test.js' --rootDir=.. --forceExit --detectOpenHandles
         env:
           FUNCTIONS_BASE: http://127.0.0.1:5001/ext-hub/us-central1
           TEST_ADMIN_KEY: test-ci-admin-key
