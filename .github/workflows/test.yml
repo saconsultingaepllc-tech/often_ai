@@ -78,9 +78,9 @@ jobs:
 
       - name: Start emulators
         run: |
-          # Create .env so the functions emulator can load env vars
-          printf 'FIREBASE_WEB_API_KEY=test-ci-key\nADMIN_API_KEY=test-ci-admin-key\n' > functions/.env
-          cat functions/.env
+          # Use .env.local (not .env) because FIREBASE_* vars are reserved in .env
+          printf 'FIREBASE_WEB_API_KEY=test-ci-key\nADMIN_API_KEY=test-ci-admin-key\n' > functions/.env.local
+          cat functions/.env.local
 
           firebase emulators:start --only auth,firestore,functions \
             --project ext-hub &
@@ -99,17 +99,21 @@ jobs:
             sleep 2
           done
 
-          # Wait for Functions emulator
-          for i in $(seq 1 30); do
-            if curl -s http://127.0.0.1:5001/ > /dev/null 2>&1; then
-              echo "Functions emulator ready"
+          # Wait for Functions emulator to load functions (not just the server)
+          for i in $(seq 1 45); do
+            # Check if functions are actually loaded by hitting a real endpoint
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5001/ext-hub/us-central1/signup 2>/dev/null || echo "000")
+            if [ "$STATUS" != "000" ] && [ "$STATUS" != "404" ]; then
+              echo "Functions emulator ready (got HTTP $STATUS from signup endpoint)"
               break
             fi
-            if [ "$i" -eq 30 ]; then
-              echo "Functions emulator failed to start"
+            if [ "$i" -eq 45 ]; then
+              echo "Functions emulator failed to load functions"
+              echo "Last status from signup endpoint: $STATUS"
+              curl -v http://127.0.0.1:5001/ext-hub/us-central1/signup 2>&1 || true
               exit 1
             fi
-            echo "Waiting for Functions emulator... ($i/30)"
+            echo "Waiting for functions to load... ($i/45)"
             sleep 2
           done
 
